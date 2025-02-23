@@ -67,9 +67,8 @@ jobs:
         #curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
         curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
         #echo "UPLOADNAME=-KernelSU" >> $GITHUB_ENV
-        #echo "CONFIG_KSU=y" >> $GITHUB_ENV
-        #cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
+        #cd $GITHUB_WORKSPACE/kernel_workspace
+        #echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
 
 
 ######
