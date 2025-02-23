@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: 环境变量配置
       run: |
@@ -19,7 +19,7 @@ jobs:
         cat config_beryllium.env | grep KERNEL_SOURCE_BRANCH= >> $GITHUB_ENV
         cat config_beryllium.env | grep KERNEL_CONFIG= >> $GITHUB_ENV
         cat config_beryllium.env | grep KERNEL_ZIP_NAME= >> $GITHUB_ENV
-        cat config_surya.env | grep ENABLE_KERNELSU= >> $GITHUB_ENV
+        cat config_beryllium.env | grep ENABLE_KERNELSU= >> $GITHUB_ENV
         cat config_beryllium.env | grep LLVM_CONFIG= >> $GITHUB_ENV
 
     - name: 构建编译内核环境
@@ -108,7 +108,7 @@ jobs:
     
     
     - name: 打包并上传
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.KERNEL_ZIP_NAME }}
         path: kernel_workspace/AnyKernel3/*
