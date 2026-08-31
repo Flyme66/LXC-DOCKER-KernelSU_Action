@@ -1,4 +1,4 @@
-name: 编译 lxc-docker-vince-Droidspaces 内核 clang 14
+name: 编译 lxc-docker-vince-droidspaces 内核 clang 14
 on:
   watch:
     types: [started]
@@ -45,9 +45,9 @@ jobs:
     - name: 开启lxc和docker配置
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        wget https://github.com/Flyme66/lxc-docker/releases/download/Lxc5.0/add-lxc-docker-custom.sh
-        chmod 755 add-lxc-docker-custom.sh
-        ./add-lxc-docker-custom.sh android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
+        wget https://github.com/Flyme66/lxc-docker/releases/download/Lxc5.0/add-lxc-docker-droidspaces-custom.sh
+        chmod 755 add-lxc-docker-droidspaces-custom.sh
+        ./add-lxc-docker-droidspaces-custom.sh android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         echo "# CONFIG_ANDROID_PARANOID_NETWORK is not set" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
 
     - name: 添加runc补丁
