@@ -1,4 +1,4 @@
-name: 编译 lxc-docker-vince-droidspaces 内核 clang 14
+name: 编译 lxc-docker-vince-droidspaces-all 内核 clang 14
 on:
   watch:
     types: [started]
@@ -15,12 +15,12 @@ jobs:
     
     - name: 环境变量配置
       run: |
-        cat config_vince_Droidspaces.env | grep KERNEL_SOURCE= >> $GITHUB_ENV
-        cat config_vince_Droidspaces.env | grep KERNEL_SOURCE_BRANCH= >> $GITHUB_ENV
-        cat config_vince_Droidspaces.env | grep KERNEL_CONFIG= >> $GITHUB_ENV
-        cat config_vince_Droidspaces.env | grep KERNEL_ZIP_NAME= >> $GITHUB_ENV
-        cat config_vince_Droidspaces.env | grep ENABLE_KERNELSU= >> $GITHUB_ENV
-        cat config_vince_Droidspaces.env | grep LLVM_CONFIG= >> $GITHUB_ENV
+        cat config_vince_Droidspaces-all.env | grep KERNEL_SOURCE= >> $GITHUB_ENV
+        cat config_vince_Droidspaces-all.env | grep KERNEL_SOURCE_BRANCH= >> $GITHUB_ENV
+        cat config_vince_Droidspaces-all.env | grep KERNEL_CONFIG= >> $GITHUB_ENV
+        cat config_vince_Droidspaces-all.env | grep KERNEL_ZIP_NAME= >> $GITHUB_ENV
+        cat config_vince_Droidspaces-all.env | grep ENABLE_KERNELSU= >> $GITHUB_ENV
+        cat config_vince_Droidspaces-all.env | grep LLVM_CONFIG= >> $GITHUB_ENV
 
     - name: 构建编译内核环境
       run: |
@@ -45,9 +45,9 @@ jobs:
     - name: 开启lxc和docker配置
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        wget https://github.com/Flyme66/lxc-docker/releases/download/Lxc5.0/add-lxc-docker-droidspaces-custom.sh
-        chmod 755 add-lxc-docker-droidspaces-custom.sh
-        ./add-lxc-docker-droidspaces-custom.sh android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
+        wget https://github.com/Flyme66/lxc-docker/releases/download/Lxc5.0/add-lxc-docker-droidspaces-all-custom.sh
+        chmod 755 add-lxc-docker-droidspaces-all-custom.sh
+        ./add-lxc-docker-droidspaces-all-custom.sh android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         echo "# CONFIG_ANDROID_PARANOID_NETWORK is not set" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
 
     - name: 添加runc补丁
