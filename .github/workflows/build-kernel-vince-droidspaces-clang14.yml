@@ -65,10 +65,10 @@ jobs:
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         rm -rf KernelSU
         #curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
-        curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s auto-hook
+        curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
         #echo "UPLOADNAME=-KernelSU" >> $GITHUB_ENV
         cd $GITHUB_WORKSPACE/kernel_workspace
-        echo "KSU_MANUAL_HOOK=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
+        echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
 
 
 ######
