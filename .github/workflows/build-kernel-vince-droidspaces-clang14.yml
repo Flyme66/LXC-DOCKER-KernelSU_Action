@@ -65,10 +65,6 @@ jobs:
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        sed -i '/CONFIG_KSU/d' android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        
 
 ######
 #    - name: 设置ccache缓存
@@ -77,7 +73,6 @@ jobs:
 #        key: build-kernel-mido-kernel
 #        max-size: 2G
 #######
-
     - name: 开始编译内核
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
@@ -86,11 +81,16 @@ jobs:
         export KBUILD_BUILD_USER=HyperPower
         export CONFIG_FILE="${{ env.KERNEL_CONFIG }}"
         make -s -j$(nproc --all) O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
-        if [ ${{env.LLVM_CONFIG}}=y ]; then
-        make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
-        else
-        make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
+        if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
+          ./scripts/config --enable KSU
         fi
+        make O=out ARCH=arm64 olddefconfig
+        if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
+          make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
+        else
+          make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
+        fi
+
                 
     - name: 准备打包内核
       run: |
