@@ -66,8 +66,9 @@ jobs:
         rm -rf ./KernelSU ./KernelSU-Next ./drivers/kernelsu
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
         cd $GITHUB_WORKSPACE/kernel_workspace
-        echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
-
+        sed -i '/CONFIG_KSU/d' android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
+        echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
+        
 
 ######
 #    - name: 设置ccache缓存
