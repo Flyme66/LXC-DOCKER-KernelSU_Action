@@ -66,12 +66,11 @@ jobs:
         rm -rf KernelSU drivers/kernelsu
         sed -i '/CONFIG_KSU=/d' arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         sed -i '/CONFIG_KSU_MANUAL_HOOK=/d' arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        # 2. 拉取指定版本 ReSukiSU 源码
-        git clone --depth 1 --branch ${{ env.KERNELSU_TAG }} https://github.com/ReSukiSU/ReSukiSU.git KernelSU
-        ln -s ../KernelSU/kernel drivers/kernelsu
-        # 3. 应用全套手动Hook补丁
-        git apply --reject ../manual_hook_full.patch
-        # 4. 写入干净唯一的内核开关到defconfig
+        # 2. 使用setup.sh拉取源码
+        curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
+        # 3. 执行官方脚本，一次性打入截图全部7项手动挂钩
+        bash KernelSU/scripts/apply-manual-hooks.sh
+        # 4. 写入开关
         cd $GITHUB_WORKSPACE/kernel_workspace
         echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         echo "CONFIG_KSU_MANUAL_HOOK=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
