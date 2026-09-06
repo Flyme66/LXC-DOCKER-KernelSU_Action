@@ -71,8 +71,8 @@ jobs:
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
 
         #echo "UPLOADNAME=-KernelSU" >> $GITHUB_ENV
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
+        #cd $GITHUB_WORKSPACE/kernel_workspace
+        e#cho "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
 
 
 ######
