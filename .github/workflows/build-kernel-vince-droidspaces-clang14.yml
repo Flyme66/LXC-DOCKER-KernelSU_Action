@@ -7,41 +7,39 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Load env
+    # 正确加载env，过滤掉注释行 #
+    - name: Load env file
       run: |
-        cat config_vince_Droidspaces.env >> $GITHUB_ENV
+        grep -v '^#' config_vince_Droidspaces.env >> $GITHUB_ENV
 
-    - name: Deps
+    - name: Install build dependencies
       run: |
         sudo apt update
         sudo apt install -y git make bc bison flex libssl-dev openssl zip cpio device-tree-compiler gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
         mkdir -p $GITHUB_WORKSPACE/kernel_workspace
 
-    - name: Get Clang13
+    - name: Download Clang13
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         git clone --depth=1 -b android13-release https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-aosp
 
-    - name: Pull kernel
+    - name: Pull kernel source
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         git clone ${{ env.KERNEL_SOURCE }} -b ${{ env.KERNEL_SOURCE_BRANCH }} android-kernel --depth=1
 
-    - name: LXC patch + clean defconfig(关键，消除override)
+    - name: LXC patch & clean defconfig (remove duplicate config lines)
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         wget -q https://github.com/Flyme66/lxc-docker/releases/download/Lxc5.0/add-lxc-docker-droidspaces-custom.sh
         chmod +x add-lxc-docker-droidspaces-custom.sh
         cd android-kernel
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
-        # 先生成基础配置
         rm -rf out
         make O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
-        # 调用补丁脚本修改 .config，而不是追加到defconfig
         ../add-lxc-docker-droidspaces-custom.sh out/.config
         sed -i 's/# CONFIG_ANDROID_PARANOID_NETWORK is not set/CONFIG_ANDROID_PARANOID_NETWORK=n/' out/.config
         make O=out ARCH=arm64 olddefconfig
-        # 导出干净无重复行的defconfig覆盖原文件
         make O=out ARCH=arm64 savedefconfig
         cp out/defconfig arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         rm -rf out
@@ -53,22 +51,19 @@ jobs:
         rm -rf KernelSU drivers/kernelsu
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
 
-    - name: Build
+    - name: Build kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
         export KBUILD_BUILD_HOST=17
         export KBUILD_BUILD_USER=HyperPower
         rm -rf out
-        # 1轮基础配置
         make O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
-        # 开启KSU
         if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
           sed -i 's/# CONFIG_KSU is not set/CONFIG_KSU=y/' out/.config
           sed -i 's/# CONFIG_KSU_MANUAL_HOOK is not set/CONFIG_KSU_MANUAL_HOOK=y/' out/.config
           make O=out ARCH=arm64 olddefconfig
         fi
-        # 配置收敛完成，直接编译，不再重复跑kconfig
         if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
           make -j$(nproc) O=out ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- LLVM=1 LLVM_IAS=1
         else
@@ -85,7 +80,7 @@ jobs:
         cp android-kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
         rm -rf AnyKernel3/.git* AnyKernel3/README.md AnyKernel3/ramdisk AnyKernel3/modules AnyKernel3/patch
 
-    - name: Upload
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.KERNEL_ZIP_NAME }}
