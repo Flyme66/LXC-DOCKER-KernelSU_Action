@@ -97,9 +97,6 @@ jobs:
           sed -i '/CONFIG_KSU/d' out/.config
           echo "CONFIG_KSU=y" >> out/.config
           make O=out ARCH=arm64 olddefconfig
-          # 写入时间戳锁，阻止Kbuild重复触发silentoldconfig
-          touch out/.config.cmd
-          touch out/include/generated/autoconf.h
         fi
 
         if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
@@ -107,6 +104,7 @@ jobs:
         else
           make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
         fi
+
 
 
                 
