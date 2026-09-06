@@ -53,13 +53,15 @@ jobs:
           ./runcpatch.sh android-kernel/kernel/cgroup.c
         fi
 
-    - name: ReSukiSU 官方注入脚本（自动拉取子模块）
+    - name: ReSukiSU注入（完整拉取子模块）
       if: env.ENABLE_KERNELSU == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         git config --global core.autocrlf false
         git config --global advice.detachedHead false
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
+        # 递归拉取缺失子模块
+        git submodule update --init --recursive
 
     - name: 开始编译内核
       run: |
@@ -67,7 +69,8 @@ jobs:
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
         export KBUILD_BUILD_HOST=17
         export KBUILD_BUILD_USER=HyperPower
-
+        # 清理旧构建缓存，清除错误残留modules.builtin
+        rm -rf out
         make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
 
         if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
