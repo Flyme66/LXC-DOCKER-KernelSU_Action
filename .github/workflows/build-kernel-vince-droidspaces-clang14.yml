@@ -53,26 +53,18 @@ jobs:
           ./runcpatch.sh android-kernel/kernel/cgroup.c
         fi
 
-    - name: 完整克隆ReSukiSU（递归子模块）
-      if: env.ENABLE_KERNELSU == 'true'
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        rm -rf ReSukiSU
-        git clone --recursive --depth=1 -b main https://github.com/ReSukiSU/ReSukiSU ReSukiSU
-        ls -la ReSukiSU/kernel/
-
-    - name: 手动部署KernelSU源码（Manual‑Hook）
+    - name: ReSukiSU官方setup.sh注入（Manual‑Hook模式）
       if: env.ENABLE_KERNELSU == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        # 清理之前残留错误文件
         rm -rf KernelSU drivers/kernelsu
-        cp -r ../ReSukiSU/kernel/KernelSU ./KernelSU
-        # 使用manual hook，不自动修改drivers
+        git config --global core.autocrlf false
+        curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
+        # 写入Manual‑Hook开关（关键！禁用drivers自动注入，彻底避开 drivers/kernelsu 报错）
         echo "CONFIG_KSU=y" >> arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        # 调试打印文件列表确认
         ls -la ./KernelSU
-        ls -la ./KernelSU/src
 
     - name: 开始编译内核
       run: |
@@ -80,6 +72,7 @@ jobs:
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
         export KBUILD_BUILD_HOST=17
         export KBUILD_BUILD_USER=HyperPower
+        # 彻底删除旧构建缓存，清除损坏的modules.builtin
         rm -rf out
         make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
 
