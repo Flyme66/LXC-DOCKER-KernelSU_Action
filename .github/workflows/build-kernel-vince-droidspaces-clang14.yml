@@ -64,23 +64,20 @@ jobs:
       if: env.ENABLE_KERNELSU == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        # 1. 清理历史残留
         rm -rf KernelSU drivers/kernelsu
         sed -i '/CONFIG_KSU=/d' arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         sed -i '/CONFIG_KSU_MANUAL_HOOK=/d' arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        # 2. 拉取ReSukiSU源码
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
-        # 3. 撤销setup自动修改的Makefile、Kconfig，关闭自动注入
         git checkout -- Makefile
         git checkout -- drivers/Kconfig
-        # 4. 手动重建软链接
         ln -sf ../KernelSU/kernel drivers/kernelsu
-        # 5. 打入全部7个手动syscall钩子（stat / execve / faccessat / sys_reboot / input / setuid / sys_read）
-        git apply --reject ../manual_hook_full.patch
-        # 6. 写入手动Hook配置开关
+        # 在线拉取完整手动挂钩补丁
+        curl -LSs "补丁完整raw地址" -o manual_hook_full.patch
+        git apply --reject manual_hook_full.patch
         cd $GITHUB_WORKSPACE/kernel_workspace
         echo "CONFIG_KSU=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         echo "CONFIG_KSU_MANUAL_HOOK=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
+
 
 ######
 #    - name: 设置ccache缓存
