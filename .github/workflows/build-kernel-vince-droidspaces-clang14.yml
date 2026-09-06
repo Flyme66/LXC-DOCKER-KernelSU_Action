@@ -53,28 +53,29 @@ jobs:
           ./runcpatch.sh android-kernel/kernel/cgroup.c
         fi
 
-    - name: ReSukiSU官方setup.sh注入（Manual‑Hook模式）
+    - name: ReSukiSU setup.sh 注入源码（纯净模式，不修改defconfig）
       if: env.ENABLE_KERNELSU == 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        # 清理之前残留错误文件
         rm -rf KernelSU drivers/kernelsu
         git config --global core.autocrlf false
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
-        # 写入Manual‑Hook开关（关键！禁用drivers自动注入，彻底避开 drivers/kernelsu 报错）
-        echo "CONFIG_KSU=y" >> arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        echo "CONFIG_KSU_MANUAL_HOOK=y" >> arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         ls -la ./KernelSU
 
-    - name: 开始编译内核
+    - name: 开始编译内核（.config动态开启KSU，消除override警告）
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
         export KBUILD_BUILD_HOST=17
         export KBUILD_BUILD_USER=HyperPower
-        # 彻底删除旧构建缓存，清除损坏的modules.builtin
         rm -rf out
         make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
+        # 在生成的 .config 中开启KSU与Manual‑Hook，不再修改原始defconfig
+        if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
+          sed -i 's/# CONFIG_KSU is not set/CONFIG_KSU=y/' out/.config
+          sed -i 's/# CONFIG_KSU_MANUAL_HOOK is not set/CONFIG_KSU_MANUAL_HOOK=y/' out/.config
+          make O=out ARCH=arm64 olddefconfig
+        fi
 
         if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
           make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
