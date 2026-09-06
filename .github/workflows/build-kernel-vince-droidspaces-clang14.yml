@@ -67,7 +67,7 @@ jobs:
         sed -i '/CONFIG_KSU=/d' arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         sed -i '/CONFIG_KSU_MANUAL_HOOK=/d' arch/arm64/configs/${{ env.KERNEL_CONFIG }}
         # 2. 拉取指定版本 ReSukiSU 源码
-        git clone --depth 1 --branch ${{ env.KERNELSU_TAG }} https://github.com/ReSukiSU/ReSukiSU KernelSU
+        git clone --depth 1 --branch ${{ env.KERNELSU_TAG }} https://github.com/ReSukiSU/ReSukiSU.git KernelSU
         ln -s ../KernelSU/kernel drivers/kernelsu
         # 3. 应用全套手动Hook补丁
         git apply --reject ../manual_hook_full.patch
