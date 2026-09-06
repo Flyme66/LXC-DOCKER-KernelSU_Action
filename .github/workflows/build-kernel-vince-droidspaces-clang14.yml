@@ -94,27 +94,11 @@ jobs:
         make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
 
         if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
-          # 仅清理KSU本身，不再操作kprobe系列配置
           sed -i '/CONFIG_KSU/d' out/.config
           echo "CONFIG_KSU=y" >> out/.config
-
-          # olddefconfig自动补齐KSU全部附属配置（不含Auto‑Hook探针依赖）
           make O=out ARCH=arm64 olddefconfig
-          make O=out ARCH=arm64 savedefconfig
-          cp out/defconfig arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-
-          rm -rf out
-          make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
         fi
 
-        if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
-          make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
-        else
-          make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
-        fi
-
-
-        # 正式完整编译
         if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
           make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
         else
