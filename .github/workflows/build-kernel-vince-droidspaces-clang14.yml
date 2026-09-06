@@ -1,4 +1,4 @@
-name: 编译 lxc-docker-vince 纯净版
+name: 编译 lxc-docker-vince
 on:
   workflow_dispatch
 jobs:
@@ -7,42 +7,32 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # 正确加载env，过滤掉注释行 #
-    - name: Load env file
+    - name: Load env
       run: |
-        grep -v '^#' config_vince_Droidspaces.env >> $GITHUB_ENV
+        grep '^[^#]' config_vince_Droidspaces.env >> $GITHUB_ENV
 
-    - name: Install build dependencies
+    - name: Deps
       run: |
         sudo apt update
         sudo apt install -y git make bc bison flex libssl-dev openssl zip cpio device-tree-compiler gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
         mkdir -p $GITHUB_WORKSPACE/kernel_workspace
 
-    - name: Download Clang13
+    - name: Get Clang13
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         git clone --depth=1 -b android13-release https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-aosp
 
-    - name: Pull kernel source
+    - name: Pull kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         git clone ${{ env.KERNEL_SOURCE }} -b ${{ env.KERNEL_SOURCE_BRANCH }} android-kernel --depth=1
 
-    - name: LXC patch & clean defconfig (remove duplicate config lines)
+    - name: LXC patch
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
         wget -q https://github.com/Flyme66/lxc-docker/releases/download/Lxc5.0/add-lxc-docker-droidspaces-custom.sh
         chmod +x add-lxc-docker-droidspaces-custom.sh
-        cd android-kernel
-        export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
-        rm -rf out
-        make O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
-        ../add-lxc-docker-droidspaces-custom.sh out/.config
-        sed -i 's/# CONFIG_ANDROID_PARANOID_NETWORK is not set/CONFIG_ANDROID_PARANOID_NETWORK=n/' out/.config
-        make O=out ARCH=arm64 olddefconfig
-        make O=out ARCH=arm64 savedefconfig
-        cp out/defconfig arch/arm64/configs/${{ env.KERNEL_CONFIG }}
-        rm -rf out
+        ./add-lxc-docker-droidspaces-custom.sh android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}
 
     - name: Inject ReSukiSU
       if: env.ENABLE_KERNELSU == 'true'
@@ -51,7 +41,7 @@ jobs:
         rm -rf KernelSU drivers/kernelsu
         curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
 
-    - name: Build kernel
+    - name: Build
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/clang-r450784d/bin:$PATH
@@ -80,7 +70,7 @@ jobs:
         cp android-kernel/out/arch/arm64/boot/Image.gz-dtb AnyKernel3/
         rm -rf AnyKernel3/.git* AnyKernel3/README.md AnyKernel3/ramdisk AnyKernel3/modules AnyKernel3/patch
 
-    - name: Upload artifact
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.KERNEL_ZIP_NAME }}
