@@ -90,12 +90,37 @@ jobs:
         export KBUILD_BUILD_HOST=17
         export KBUILD_BUILD_USER=HyperPower
         export CONFIG_FILE="${{ env.KERNEL_CONFIG }}"
-        make -s -j$(nproc --all) O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
-        if [ ${{env.LLVM_CONFIG}}=y ]; then
-        make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
-        else
-        make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
+
+        # 第一步生成基础配置
+        make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
+
+        if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
+          sed -i '/CONFIG_KSU/d' out/.config
+          sed -i '/CONFIG_KPROBES/d' out/.config
+          sed -i '/CONFIG_HAVE_KPROBES/d' out/.config
+          sed -i '/CONFIG_KPROBE_EVENTS/d' out/.config
+          echo "CONFIG_KSU=y" >> out/.config
+          echo "CONFIG_KPROBES=y" >> out/.config
+          echo "CONFIG_HAVE_KPROBES=y" >> out/.config
+          echo "CONFIG_KPROBE_EVENTS=y" >> out/.config
+          # 全自动补齐所有新增配置
+          make O=out ARCH=arm64 olddefconfig
+          # 将最终固化好的配置写回defconfig，彻底锁定
+          make O=out ARCH=arm64 savedefconfig
+          cp out/defconfig arch/arm64/configs/${{ env.KERNEL_CONFIG }}
+          # 删除输出目录，干净构建，只执行一次silentoldconfig
+          rm -rf out
+          # 使用已经固化好的defconfig重新生成干净环境
+          make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
         fi
+
+        # 正式完整编译
+        if [ "${{ env.LLVM_CONFIG }}" = "y" ]; then
+          make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-" LLVM=1 LLVM_IAS=1
+        else
+          make -j$(nproc --all) CC="clang" O=out ARCH=arm64 CLANG_TRIPLE="aarch64-linux-gnu-" CROSS_COMPILE="aarch64-linux-gnu-" CROSS_COMPILE_ARM32="arm-linux-gnueabi-"
+        fi
+
 
                 
     - name: 准备打包内核
