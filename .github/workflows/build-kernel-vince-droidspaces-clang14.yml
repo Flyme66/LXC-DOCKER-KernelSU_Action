@@ -70,7 +70,7 @@ jobs:
 
         #echo "UPLOADNAME=-KernelSU" >> $GITHUB_ENV
         cd $GITHUB_WORKSPACE/kernel_workspace
-        echo "KSU_MANUAL_HOOK=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
+        echo "CONFIG_KSU_MANUAL_HOOK=y" >> android-kernel/arch/arm64/configs/${{ env.KERNEL_CONFIG }}        
         
 
 
