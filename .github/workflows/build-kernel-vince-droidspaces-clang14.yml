@@ -17,6 +17,7 @@ jobs:
         cat config_vince_Droidspaces.env | grep KERNEL_ZIP_NAME= >> $GITHUB_ENV
         cat config_vince_Droidspaces.env | grep ENABLE_KERNELSU= >> $GITHUB_ENV
         cat config_vince_Droidspaces.env | grep LLVM_CONFIG= >> $GITHUB_ENV
+        cat config_vince_Droidspaces.env | grep KERNELSU_TAG= >> $GITHUB_ENV
 
     - name: 构建编译内核环境
       run: |
@@ -52,17 +53,13 @@ jobs:
           ./runcpatch.sh android-kernel/kernel/cgroup.c
         fi
 
-    - name: 手动注入ReSukiSU（patch模式，不使用setup.sh）
+    - name: ReSukiSU 官方注入脚本（自动拉取子模块）
       if: env.ENABLE_KERNELSU == 'true'
       run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        git clone --depth=1 https://github.com/ReSukiSU/ReSukiSU resukisu
-        cd android-kernel
-        cp -r ../resukisu/kernel/drivers/resukisu ./drivers/
-        # 注册Kconfig入口
-        grep -q "source \"drivers/resukisu/Kconfig\"" ./drivers/Kconfig || echo 'source "drivers/resukisu/Kconfig"' >> ./drivers/Kconfig
-        # 注册Makefile编译规则
-        grep -q "obj-\$(CONFIG_RESUKISU)" ./drivers/Makefile || echo 'obj-$(CONFIG_RESUKISU) += resukisu/' >> ./drivers/Makefile
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        git config --global core.autocrlf false
+        git config --global advice.detachedHead false
+        curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s ${{ env.KERNELSU_TAG }}
 
     - name: 开始编译内核
       run: |
@@ -74,8 +71,8 @@ jobs:
         make -s O=out ARCH=arm64 ${{ env.KERNEL_CONFIG }}
 
         if [ "${{ env.ENABLE_KERNELSU }}" = "true" ];then
-          sed -i '/CONFIG_RESUKISU/d' out/.config
-          echo "CONFIG_RESUKISU=y" >> out/.config
+          sed -i '/CONFIG_KSU/d' out/.config
+          echo "CONFIG_KSU=y" >> out/.config
           make O=out ARCH=arm64 olddefconfig
         fi
 
