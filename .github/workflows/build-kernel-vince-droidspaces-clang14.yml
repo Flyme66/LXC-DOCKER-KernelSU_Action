@@ -1,4 +1,4 @@
-name: 编译 lxc-docker-vince-droidspaces-all 内核 clang 14
+name: 编译 lxc-docker-vince-droidspaces 内核 clang 14
 on:
   watch:
     types: [started]
